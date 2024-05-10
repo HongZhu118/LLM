@@ -2,6 +2,7 @@ import numpy as np
 import math
 from ..Population import Population
 from .LLM_Response import GA_binary
+from .Response_json import llama3_response
 """
  OperatorGA - Crossover and mutation operators of genetic algorithm.
 
@@ -344,12 +345,16 @@ def OperatorGA(pop, problem, *args) -> Population:
          Genetic operators for real encoding
          Simulated binary crossover
         """
-        # Offspring = np.empty((2*N,D))
-        # for i in range(N):
-        #     off1,off2 =GA_binary(D,pop1[i],pop2[i])
-        #     Offspring[2*i] = off1
-        #     Offspring[2*i+1] = off2
+        # 传入两个父代，一次生成1个子代，使用chat回复方式
+        Offspring = np.empty((2*N,D))
+        for i in range(N):
+            off1,off2 =GA_binary(D,pop1[i],pop2[i])
+            Offspring[2*i] = off1
+            Offspring[2*i+1] = off2
 
+
+
+        # 传入部分种群，一次生成10个子代，使用json回复方式
         # Once = 5
         # B = int(N/Once)
         # offspring = []
@@ -362,58 +367,58 @@ def OperatorGA(pop, problem, *args) -> Population:
         # Offspring = np.array(offspring)
 
 
-        beta = np.zeros((N, D))
-        mu = np.random.random((N, D))
-        beta[mu <= 0.5] = (2 * mu[mu <= 0.5]) ** (1 / (disC + 1))
-        beta[mu > 0.5] = (2 - 2 * mu[mu > 0.5]) ** (-1 / (disC + 1))
-        beta = beta * (-1) ** np.random.randint(0, 2, (N, D))
-        beta[np.random.random((N, D)) < 0.5] = 1
-        beta[np.tile(np.random.random((N, 1)) > proC, (1, D))] = 1
-        Offspring = np.vstack(
-            (
-                (pop1 + pop2) / 2 + beta * (pop1 - pop2) / 2,
-                (pop1 + pop2) / 2 - beta * (pop1 - pop2) / 2,
-            )
-        )  # noqa
-        """
-        Polynomial mutation
-        """
-        Lower = np.tile(problem.lb, (2 * N, 1))
-        Upper = np.tile(problem.ub, (2 * N, 1))
-        Site = np.random.random((2 * N, D)) < proM / D
-        mu = np.random.random((2 * N, D))
-        temp = np.logical_and(Site, mu <= 0.5)
-        Offspring = np.minimum(np.maximum(Offspring, Lower), Upper)
-        Offspring[temp] = Offspring[temp] + (Upper[temp] - Lower[temp]) * (
-            (
-                2 * mu[temp]
-                + (1 - 2 * mu[temp])
-                * (
-                    1
-                    - (Offspring[temp] - Lower[temp])
-                    / (Upper[temp] - Lower[temp])  # noqa
-                )
-                ** (disM + 1)
-            )
-            ** (1 / (disM + 1))
-            - 1
-        )  # noqa
-        temp = np.logical_and(Site, mu > 0.5)  # noqa: E510
-        Offspring[temp] = Offspring[temp] + (Upper[temp] - Lower[temp]) * (
-            1
-            - (
-                2 * (1 - mu[temp])
-                + 2
-                * (mu[temp] - 0.5)
-                * (
-                    1
-                    - (Upper[temp] - Offspring[temp])
-                    / (Upper[temp] - Lower[temp])
-                )  # noqa
-                ** (disM + 1)
-            )
-            ** (1 / (disM + 1))
-        )  # noqa
+        # beta = np.zeros((N, D))
+        # mu = np.random.random((N, D))
+        # beta[mu <= 0.5] = (2 * mu[mu <= 0.5]) ** (1 / (disC + 1))
+        # beta[mu > 0.5] = (2 - 2 * mu[mu > 0.5]) ** (-1 / (disC + 1))
+        # beta = beta * (-1) ** np.random.randint(0, 2, (N, D))
+        # beta[np.random.random((N, D)) < 0.5] = 1
+        # beta[np.tile(np.random.random((N, 1)) > proC, (1, D))] = 1
+        # Offspring = np.vstack(
+        #     (
+        #         (pop1 + pop2) / 2 + beta * (pop1 - pop2) / 2,
+        #         (pop1 + pop2) / 2 - beta * (pop1 - pop2) / 2,
+        #     )
+        # )  # noqa
+        # """
+        # Polynomial mutation
+        # """
+        # Lower = np.tile(problem.lb, (2 * N, 1))
+        # Upper = np.tile(problem.ub, (2 * N, 1))
+        # Site = np.random.random((2 * N, D)) < proM / D
+        # mu = np.random.random((2 * N, D))
+        # temp = np.logical_and(Site, mu <= 0.5)
+        # Offspring = np.minimum(np.maximum(Offspring, Lower), Upper)
+        # Offspring[temp] = Offspring[temp] + (Upper[temp] - Lower[temp]) * (
+        #     (
+        #         2 * mu[temp]
+        #         + (1 - 2 * mu[temp])
+        #         * (
+        #             1
+        #             - (Offspring[temp] - Lower[temp])
+        #             / (Upper[temp] - Lower[temp])  # noqa
+        #         )
+        #         ** (disM + 1)
+        #     )
+        #     ** (1 / (disM + 1))
+        #     - 1
+        # )  # noqa
+        # temp = np.logical_and(Site, mu > 0.5)  # noqa: E510
+        # Offspring[temp] = Offspring[temp] + (Upper[temp] - Lower[temp]) * (
+        #     1
+        #     - (
+        #         2 * (1 - mu[temp])
+        #         + 2
+        #         * (mu[temp] - 0.5)
+        #         * (
+        #             1
+        #             - (Upper[temp] - Offspring[temp])
+        #             / (Upper[temp] - Lower[temp])
+        #         )  # noqa
+        #         ** (disM + 1)
+        #     )
+        #     ** (1 / (disM + 1))
+        # )  # noqa
 
     if calobj:  # noqa: E510
         Offspring = Population(decs=Offspring)

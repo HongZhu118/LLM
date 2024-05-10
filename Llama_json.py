@@ -48,5 +48,3 @@ while True:
 print(offspring)
 print(type(L_values))
 print(json.dumps(json.loads(json_data["response"]), indent=2))
-print(array1)
-print(array2)

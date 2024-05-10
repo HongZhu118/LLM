@@ -282,32 +282,6 @@ def OperatorGAhalf(pop, problem, *args) -> Population:
                     )
                 )
     else:
-
-        # offspring = []
-        # while len(offspring) < pop1.shape[0]:
-        #     i = 0
-        #     response = ollama.chat(model='llama3', messages=[
-        #         {
-        #             'role': 'user',
-        #             'content': f"""
-        #                         I have two existing 1 by {D} dimensional numpy array P={pop1[i]} and O={pop2[i]}.\
-        #                         Please return one numpy array L and K with the same size of P that is totally different from O and P but can be motivated from them.\
-        #                         Please use the format:
-        #                         L=<L>
-        #                         Do not give additional explanations.If you return code, give the results of your code run, and output a specific list
-        #                         """
-        #         },
-        #     ])
-        #     r = response['message']['content']
-        #     float_pattern = r'\b\d+\.\d+\b'
-        #     text = re.findall(float_pattern, r)[-7:]
-        #     float_values = [float(match) for match in text]
-        #     if len(float_values) == pop1.shape[1]:
-        #         i += 1
-        #         off1 = float_values[:7]
-        #         offspring.append(off1)
-        # Offspring = np.array(offspring)
-
         Offspring = np.empty((N,D))
         for i in range(N):
             off =GAhalf_binary(D,pop1[i],pop2[i])
