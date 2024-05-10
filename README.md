@@ -56,36 +56,48 @@ response = ollama.chat(
 ```
 ## 5. 使用llama3代替交叉、变异
 ### 1.测试用例（主函数）
-Llama3-for-evolution\components\packages\tests\GA_test.py
+Llama3-for-evolution\tests\GA_test.py
 ### 2.测试问题
-Llama3-for-evolution\components\packages\platgo\problems\SOP_F20.py
+Llama3-for-evolution\platgo\problems\SOP_F20.py
 ### 3.模型调用
-在Llama3-for-evolution\components\packages\platgo\operators\OperatorGA.py中调用llama3，并修改提示词content内容:
+在Llama3-for-evolution\platgo\operators\LLM_Response.py中调用llama3，并修改提示词content内容:
+
 ```
-response = ollama.chat(model='llama3', messages=[
-    {
-        'role': 'user',
-        'content': f"""
-                    I have two existing 1 by {D} dimensional numpy array P={pop1[i]} and O={pop2[i]}.\
-                    Please return two numpy array L and K with the same size of P that is totally different from O and P but can be motivated from them.\
-                    Please use the format:
-                    L=<L> 
-                    K=<K>
-                    Do not give additional explanations.If you return code, give the results of your code run, and output a specific list
-                    """
-    },
-])
+def GA_binary(D,pop1,pop2):
+    template = {
+      "L": [],
+      "K": [],}
+    while True:
+        try:
+            response = ollama.chat(model='llama3', messages=[
+                {
+                    'role': 'user',
+                    'content': f"""
+                                I have two existing 1 by {D} dimensional numpy array P={pop1} and O={pop2}.\
+                                Please return two numpy array L and K with the same size of P that is totally different from O and P but can be motivated from them.\
+                                Respond using JSON.\nUse the following template: {json.dumps(template)}.
+                                Do not give additional explanations.If you return code, give the results of your code run and output a specific list
+                                """
+                },
+            ])
+            r = response['message']['content']
+            float_pattern = r'\b\d+\.\d+\b'
+            text = re.findall(float_pattern, r)[-2*D:]
+            if len(text) == 2*D:
+                float_array1 = np.array(text[:D], dtype=np.float32)
+                float_array2 = np.array(text[D:2*D], dtype=np.float32)
+                break
+        except:
+            print("Error,Regenerate")
+            continue
+    return float_array1,float_array2
 ```
-### 4.模型返回结果处理
+### 4.替换算子
+在Llama3-for-evolution\platgo\operators\OperatorGA.py中调用LLM_Response.py中提供的函数
 ```
-r = response['message']['content']
-float_pattern = r'\b\d+\.\d+\b'
-text = re.findall(float_pattern, r)[-12:]
-float_values = [float(match) for match in text]
-if len(float_values) == pop1.shape[1]*2:
-    i += 1
-    off1 = float_values[:6]
-    off2 = float_values[6:12]
-    offspring.append(off1)
-    offspring.append(off2)
+    Offspring = np.empty((2*N,D))
+    for i in range(N):
+        off1,off2 =GA_binary(D,pop1[i],pop2[i])
+        Offspring[2*i] = off1
+        Offspring[2*i+1] = off2
 ```
